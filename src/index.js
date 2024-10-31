@@ -1,50 +1,72 @@
 import * as THREE from 'three'
 import './main.scss';
+import {bool} from "three/tsl";
 
 const scene = new THREE.Scene();
 
-const AxesHelper = new THREE.AxesHelper(5)
-
-scene.add(AxesHelper)
-
 const geometry = new THREE.BoxGeometry(1, 1, 1);
 const material = new THREE.MeshBasicMaterial({ color: "purple", wireframe: true });
-const cube = new THREE.Mesh(geometry, material);
+const group = new THREE.Group();
+const meshes = []
 
-scene.add(cube);
+const colors = ['yellow', 'green', 'blue', 'red', 'blue'];
 
-const size = {
-  width: 600,
-  height: 600,
-};
+for (let x = -1.2; x <= 1.2; x+=1.2) {
+  for (let y = -1.2; y <= 1.2; y+=1.2) {
+    const material = new THREE.MeshBasicMaterial({ color: colors[((Math.random() * 3) | 0) + 1], wireframe: true });
+    const mesh = new THREE.Mesh(geometry, material);
 
-const camera = new THREE.PerspectiveCamera(75,size.width / size.height, 0.1, 1000 );
-camera.position.set(0, 0, 3);
+    mesh.scale.set(0.5,0.5, 0.5)
+    mesh.position.set(x, y, 0);
+    meshes.push(mesh);
+  }
+}
+group.add(...meshes);
+scene.add(group);
 
+
+
+const camera = new THREE.PerspectiveCamera(75,window.innerWidth / window.innerHeight, 0.1, 1000 );
+camera.position.set(1, 1, 5);
+camera.lookAt(new THREE.Vector3(0, 0, 0));
 scene.add(camera)
 
 const renderElement = document.querySelector(".canvas");
-
 const renderer = new THREE.WebGLRenderer({ canvas: renderElement });
-renderer.setSize(size.width, size.height);
+renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.render(scene, camera);
 
 const clock = new THREE.Clock();
+const maxScale = 1
+const minScale = 0.5
+let grow = false
 
-// let time = Date.now()
+const animate = () => {
+  const delta = clock.getDelta();
+  meshes.forEach((mesh, index) => {
+    const mult = index % 2 === 0 ? 1 : -1;
+    mesh.rotation.x += mult * delta
+    mesh.rotation.y += mult * delta * 0.2
+  })
 
-const tick = () => {
-  // const currentTime = Date.now();
-  // const delta = currentTime - time;
-  // time = currentTime;
   const elapsedTime = clock.getElapsedTime();
+  camera.position.set(Math.sin(elapsedTime), Math.cos(elapsedTime));
+  camera.lookAt(new THREE.Vector3(0, 0, 0));
 
-  camera.position.x = Math.cos(elapsedTime)
-  camera.position.y = Math.sin(elapsedTime)
-  camera.lookAt(cube.position)
+  const mult = grow ? 1 : -1;
+  group.scale.x += mult * delta * 0.2
+  group.scale.y += mult * delta* 0.2
+  group.scale.z += mult * delta* 0.2
 
-  // cube.rotation.y += 0.01 * elapsedTime;
+  if (grow && group.scale.x >= maxScale) {
+    grow = false
+  }
+  else if(!grow && group.scale.x <= minScale){
+    grow = true
+  }
+
   renderer.render(scene, camera);
-  window.requestAnimationFrame(tick);
+  requestAnimationFrame(animate);
+
 }
-tick();
+animate()
