@@ -5,7 +5,12 @@ import './main.scss';
 const scene = new THREE.Scene();
 const renderElement = document.querySelector(".canvas");
 
-const camera = new THREE.PerspectiveCamera(75,window.innerWidth / window.innerHeight, 0.1, 1000 );
+let sizes = {
+  width : window.innerWidth,
+  height : window.innerHeight
+}
+
+const camera = new THREE.PerspectiveCamera(75,sizes.width / sizes.height);
 camera.position.set(0, 0, 5);
 camera.lookAt(new THREE.Vector3(0, 0, 0));
 
@@ -26,18 +31,9 @@ scene.add(cube)
 
 
 const renderer = new THREE.WebGLRenderer({ canvas: renderElement });
-renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setSize(sizes.width, sizes.height);
 renderer.render(scene, camera);
 
-// const cursor = {
-//   x : 0, 
-//   y : 0
-// }
-
-// window.addEventListener('mousemove', (event)=>{
-//   cursor.x = -(event.clientX / window.innerWidth - 0.5)
-//   cursor.y = event.clientY / window.innerHeight - 0.5
-// })
 
 
 const tick = () =>{
@@ -47,3 +43,20 @@ const tick = () =>{
   window.requestAnimationFrame(tick)
 }
 tick()
+
+
+window.addEventListener("resize", () => {
+  sizes.width = document.body.offsetWidth;
+  sizes.height = document.body.offsetHeight;
+
+  camera.aspect = sizes.width / sizes.height
+  camera.updateProjectionMatrix()
+
+  renderer.setSize(sizes.width , sizes.height);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.render(scene, camera)
+})
+
+window.addEventListener("dblclick", () => {
+  document.fullscreenElement !== null  ? document.exitFullscreen() : renderElement.requestFullscreen()
+})
