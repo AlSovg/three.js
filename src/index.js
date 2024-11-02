@@ -19,7 +19,30 @@ controls.enableDamping = true
 
 scene.add(camera)
 
-const geometry = new THREE.BoxGeometry(1, 1, 1);
+// const geometry = new THREE.CircleGeometry( 1, 20, 0, Math.PI)
+// const  geometry = new THREE.PlaneGeometry(1, 1, 10, 10)
+// const geometry = new THREE.ConeGeometry(1, 2, 32, 1, true, 0 ,Math.PI)
+// const geometry = new THREE.CylinderGeometry(1, 2, 2, 32, 4, true, 0,Math.PI / 4)
+// const  geometry = new THREE.RingGeometry(1, 2, 10, 10, 0, Math.PI);
+// const geometry = new THREE.TorusGeometry(1, 0.5, 16, 100)
+// const geometry = new THREE.TorusKnotGeometry(1, 0.25, 100, 16, 1)
+// const  geometry = new THREE.DodecahedronGeometry(1, 0)
+// const geometry = new THREE.OctahedronGeometry(1, 0)
+// const geometry = new THREE.TetrahedronGeometry(1, 0)
+// const geometry = new THREE.IcosahedronGeometry()
+// const geometry = new THREE.SphereGeometry(2, 20, 16, 0, Math.PI/2);
+
+const geometry = new THREE.BufferGeometry()
+
+const amount = 50;
+const points = new Float32Array(amount * 3 * 3)
+for (let i = 0; i < amount * 3 * 3; i++) {
+  points[i] = Math.random() * 3;
+}
+
+const pointsBuffer = new THREE.BufferAttribute(points, 3)
+geometry.setAttribute('position', pointsBuffer)
+
 const material = new THREE.MeshBasicMaterial({
   color : 'yellow',
   wireframe : true,
