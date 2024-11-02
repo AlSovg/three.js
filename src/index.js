@@ -1,17 +1,18 @@
 import * as THREE from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js';
+import TWEEN from "three/examples/jsm/libs/tween.module";
 import './main.scss';
 
 const scene = new THREE.Scene();
 const renderElement = document.querySelector(".canvas");
 
 let sizes = {
-  width : window.innerWidth,
-  height : window.innerHeight
+    width: window.innerWidth,
+    height: window.innerHeight
 }
 
-const camera = new THREE.PerspectiveCamera(75,sizes.width / sizes.height);
-camera.position.set(0, 0, 5);
+const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height);
+camera.position.set(0, 0, 30);
 camera.lookAt(new THREE.Vector3(0, 0, 0));
 
 const controls = new OrbitControls(camera, renderElement)
@@ -19,67 +20,117 @@ controls.enableDamping = true
 
 scene.add(camera)
 
-// const geometry = new THREE.CircleGeometry( 1, 20, 0, Math.PI)
-// const  geometry = new THREE.PlaneGeometry(1, 1, 10, 10)
-// const geometry = new THREE.ConeGeometry(1, 2, 32, 1, true, 0 ,Math.PI)
-// const geometry = new THREE.CylinderGeometry(1, 2, 2, 32, 4, true, 0,Math.PI / 4)
-// const  geometry = new THREE.RingGeometry(1, 2, 10, 10, 0, Math.PI);
-// const geometry = new THREE.TorusGeometry(1, 0.5, 16, 100)
-// const geometry = new THREE.TorusKnotGeometry(1, 0.25, 100, 16, 1)
-// const  geometry = new THREE.DodecahedronGeometry(1, 0)
-// const geometry = new THREE.OctahedronGeometry(1, 0)
-// const geometry = new THREE.TetrahedronGeometry(1, 0)
-// const geometry = new THREE.IcosahedronGeometry()
-// const geometry = new THREE.SphereGeometry(2, 20, 16, 0, Math.PI/2);
+new THREE.BoxGeometry(1, 1, 1);
 
-const geometry = new THREE.BufferGeometry()
 
-const amount = 50;
-const points = new Float32Array(amount * 3 * 3)
-for (let i = 0; i < amount * 3 * 3; i++) {
-  points[i] = Math.random() * 3;
+const group = new THREE.Group();
+const geometries = [
+    new THREE.CircleGeometry(1, 20, 0, Math.PI),
+    new THREE.PlaneGeometry(1, 1, 10, 10),
+    new THREE.ConeGeometry(1, 2, 32, 1, true, 0, Math.PI),
+    new THREE.CylinderGeometry(1, 2, 2, 32, 4, true, 0, Math.PI / 4),
+    new THREE.RingGeometry(1, 2, 10, 10, 0, Math.PI),
+    new THREE.TorusGeometry(1, 0.5, 16, 100),
+    new THREE.TorusKnotGeometry(1, 0.25, 100, 16, 1),
+    new THREE.DodecahedronGeometry(1, 0),
+    new THREE.OctahedronGeometry(1, 0),
+    new THREE.TetrahedronGeometry(1, 0),
+    new THREE.IcosahedronGeometry(),
+    new THREE.SphereGeometry(2, 20, 16, 0, Math.PI / 2),
+]
+
+let index = 0;
+let activeIndex = -1
+for (let i = -5; i <= 5; i += 5) {
+    for (let j = -5; j <= 5; j += 5) {
+        const material = new THREE.MeshBasicMaterial({
+            color: 'gray',
+            wireframe: true,
+        })
+
+        const mesh = new THREE.Mesh(geometries[index], material)
+        mesh.position.set(i, j, 10)
+        mesh.index = index
+        mesh.basePosition = new THREE.Vector3(i, j, 10)
+        group.add(mesh)
+        index += 1
+    }
+
 }
 
-const pointsBuffer = new THREE.BufferAttribute(points, 3)
-geometry.setAttribute('position', pointsBuffer)
+scene.add(group)
 
-const material = new THREE.MeshBasicMaterial({
-  color : 'yellow',
-  wireframe : true,
-})
-
-const cube = new THREE.Mesh(geometry, material)
-
-scene.add(cube)
-
-
-const renderer = new THREE.WebGLRenderer({ canvas: renderElement });
+const renderer = new THREE.WebGLRenderer({canvas: renderElement});
 renderer.setSize(sizes.width, sizes.height);
 renderer.render(scene, camera);
 
+const raycaster = new THREE.Raycaster()
+const handleClick = (event) => {
+    const pointer = new THREE.Vector2()
+    pointer.x = 2 * (event.clientX / document.body.offsetWidth) - 1
+    pointer.y = -2 * (event.clientY / document.body.offsetHeight) + 1
 
+    if (activeIndex !== -1) {
+        resetActive()
+    }
 
-const tick = () =>{
-  
-  controls.update()
-  renderer.render(scene, camera)
-  window.requestAnimationFrame(tick)
+    raycaster.setFromCamera(pointer, camera)
+    const intersects = raycaster.intersectObjects(group.children);
+    for (let i = 0; i < intersects.length; i++) {
+        intersects[i].object.material.color.set('purple')
+        activeIndex = intersects[i].object.index
+
+        new TWEEN.Tween(intersects[i].object.position).to({
+            x: 0,
+            y: 0,
+            z : 25
+        }, Math.random() * 1000 + 1000).easing(
+            TWEEN.Easing.Exponential.InOut
+        ).start()
+    }
+}
+
+window.addEventListener('click', handleClick);
+
+const resetActive = () => {
+    group.children[activeIndex].material.color.set('gray')
+    new TWEEN.Tween(group.children[activeIndex].position).to({
+        x: group.children[activeIndex].basePosition.x,
+        y: group.children[activeIndex].basePosition.y,
+        z : group.children[activeIndex].basePosition.z
+    }, Math.random() * 1000 + 1000).easing(
+        TWEEN.Easing.Exponential.InOut
+    ).start()
+    activeIndex = -1
+}
+
+const clock = new THREE.Clock();
+const tick = () => {
+    const delta = clock.getDelta();
+    if (activeIndex !== -1){
+        group.children[activeIndex].rotation.y += 0.5 * delta;
+
+    }
+    TWEEN.update()
+    controls.update()
+    renderer.render(scene, camera)
+    window.requestAnimationFrame(tick)
 }
 tick()
 
 
 window.addEventListener("resize", () => {
-  sizes.width = document.body.offsetWidth;
-  sizes.height = document.body.offsetHeight;
+    sizes.width = document.body.offsetWidth;
+    sizes.height = document.body.offsetHeight;
 
-  camera.aspect = sizes.width / sizes.height
-  camera.updateProjectionMatrix()
+    camera.aspect = sizes.width / sizes.height
+    camera.updateProjectionMatrix()
 
-  renderer.setSize(sizes.width , sizes.height);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.render(scene, camera)
+    renderer.setSize(sizes.width, sizes.height);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.render(scene, camera)
 })
 
 window.addEventListener("dblclick", () => {
-  document.fullscreenElement !== null  ? document.exitFullscreen() : renderElement.requestFullscreen()
+    document.fullscreenElement !== null ? document.exitFullscreen() : renderElement.requestFullscreen()
 })
