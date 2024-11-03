@@ -1,6 +1,8 @@
 import * as THREE from 'three'
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js';
 import TWEEN from "three/examples/jsm/libs/tween.module";
+import Stats from "stats.js";
+import * as dat from "lil-gui"
 import './main.scss';
 
 const scene = new THREE.Scene();
@@ -17,6 +19,13 @@ camera.lookAt(new THREE.Vector3(0, 0, 0));
 
 const controls = new OrbitControls(camera, renderElement)
 controls.enableDamping = true
+
+const stats = new Stats();
+stats.showPanel(0)
+
+const gui = new dat.GUI({ closeFolders : true});
+
+document.body.appendChild(stats.dom);
 
 scene.add(camera)
 
@@ -38,15 +47,18 @@ const geometries = [
     new THREE.IcosahedronGeometry(),
     new THREE.SphereGeometry(2, 20, 16, 0, Math.PI / 2),
 ]
+const parameters = {
+    color : 'gray'
+}
+const material = new THREE.MeshBasicMaterial({
+    color: parameters.color,
+    wireframe: true,
+})
 
 let index = 0;
 let activeIndex = -1
 for (let i = -5; i <= 5; i += 5) {
     for (let j = -5; j <= 5; j += 5) {
-        const material = new THREE.MeshBasicMaterial({
-            color: 'gray',
-            wireframe: true,
-        })
 
         const mesh = new THREE.Mesh(geometries[index], material)
         mesh.position.set(i, j, 10)
@@ -57,6 +69,15 @@ for (let i = -5; i <= 5; i += 5) {
     }
 
 }
+
+const scaleFolder = gui.addFolder('Scale')
+scaleFolder.add(group.scale, 'x').min(0).max(5).step(0.1).name("Расширение по оси х")
+scaleFolder.add(group.scale, 'y').min(0).max(5).step(0.1).name("Расширение по оси х")
+scaleFolder.add(group.scale, 'z').min(0).max(5).step(0.1).name("Расширение по оси х")
+
+gui.add(group, 'visible')
+gui.add(material, 'wireframe')
+gui.addColor(parameters, 'color').onChange(() => material.color.set(parameters.color));
 
 scene.add(group)
 
@@ -106,6 +127,8 @@ const resetActive = () => {
 
 const clock = new THREE.Clock();
 const tick = () => {
+    stats.begin()
+
     const delta = clock.getDelta();
     if (activeIndex !== -1){
         group.children[activeIndex].rotation.y += 0.5 * delta;
@@ -114,6 +137,9 @@ const tick = () => {
     TWEEN.update()
     controls.update()
     renderer.render(scene, camera)
+
+    stats.end()
+
     window.requestAnimationFrame(tick)
 }
 tick()
