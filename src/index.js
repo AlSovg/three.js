@@ -8,6 +8,16 @@ import './main.scss';
 const scene = new THREE.Scene();
 const renderElement = document.querySelector(".canvas");
 
+const loadingManager = new THREE.LoadingManager();
+loadingManager.onStart = () => {
+    console.log("Starting...");
+}
+loadingManager.onLoad = () => {
+    console.log("Load finished...");
+}
+const textureLoader = new THREE.TextureLoader(loadingManager);
+const texture = textureLoader.load("Door_Wood_001_basecolor.jpg")
+
 let sizes = {
     width: window.innerWidth,
     height: window.innerHeight
@@ -51,7 +61,7 @@ const parameters = {
     color : 'gray'
 }
 const material = new THREE.MeshBasicMaterial({
-    color: parameters.color,
+    map : texture,
     wireframe: true,
 })
 

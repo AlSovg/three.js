@@ -1,6 +1,7 @@
 const htmlWebpackPlugin = require("html-webpack-plugin");
 const miniCssExtractPlugin = require("mini-css-extract-plugin");
 const path = require('path');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
     entry: "./src/index.js",
@@ -10,6 +11,13 @@ module.exports = {
       clean: true,
     },
     plugins: [
+      new CopyWebpackPlugin({
+        patterns: [
+          {
+            from: path.resolve(__dirname, '../textures')
+          }
+        ]
+      }),
       new htmlWebpackPlugin({
         template: "./src/index.html",
       }),
@@ -34,6 +42,14 @@ module.exports = {
         {
           test: /\.scss$/i,
           use: [miniCssExtractPlugin.loader, "css-loader", "sass-loader"],
+        },
+        {
+          test: /\.(jpg|png|gif|svg)$/,
+          type: 'asset/resource',
+          generator:
+              {
+                filename: 'assets/images/[hash][ext]'
+              }
         },
         {
           test: /\.(woff|woff2|eot|ttf|otf)$/i,
